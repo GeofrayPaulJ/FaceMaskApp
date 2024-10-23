@@ -4,7 +4,7 @@ import cv2
 from PIL import Image
 import numpy as np
 
-model = ultralytics.YOLO('model/best_yet.pt')
+model = ultralytics.YOLO('best_yet.pt')
 
 st.title("Real-Time Face Mask Detection using YOLOv8")
 
