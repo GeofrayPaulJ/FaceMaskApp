@@ -20,22 +20,26 @@ if 'cap' not in st.session_state:
 # Placeholder for displaying the video
 video_placeholder = st.empty()
 
-# Button to turn on the camera
-if st.button("Turn On Camera") and not st.session_state.camera_on:
-    st.session_state.camera_on = True
-    st.session_state.cap = cv2.VideoCapture(0)
-
-    # Check if the camera is accessible
-    if not st.session_state.cap.isOpened():
-        st.error("Error: Could not access the camera. Please check the device.")
-        st.session_state.camera_on = False
-
-# Button to turn off the camera
-if st.button("Turn Off Camera") and st.session_state.camera_on:
-    st.session_state.camera_on = False
+# Function to safely release the camera and reset session state
+def release_camera():
     if st.session_state.cap is not None:
         st.session_state.cap.release()
         st.session_state.cap = None
+    st.session_state.camera_on = False
+    cv2.destroyAllWindows()
+
+# Button to turn on the camera
+if st.button("Turn On Camera") and not st.session_state.camera_on:
+    st.session_state.cap = cv2.VideoCapture(0)
+    if st.session_state.cap.isOpened():
+        st.session_state.camera_on = True
+    else:
+        st.error("Error: Could not access the camera. Please check the device.")
+        release_camera()
+
+# Button to turn off the camera
+if st.button("Turn Off Camera") and st.session_state.camera_on:
+    release_camera()
 
 # Stream the video if the camera is on
 if st.session_state.camera_on:
@@ -45,6 +49,7 @@ if st.session_state.camera_on:
         ret, frame = cap.read()
         if not ret:
             st.warning("Could not read from camera. Please check your device.")
+            release_camera()  # Safely release camera if there's an issue
         else:
             # Run the YOLO model on the frame
             results = model(frame)
@@ -59,8 +64,6 @@ if st.session_state.camera_on:
             # Display the frame
             video_placeholder.image(img)
 
-    # Release the camera when the session ends
-    if not st.session_state.camera_on and st.session_state.cap is not None:
-        st.session_state.cap.release()
-        st.session_state.cap = None
-        cv2.destroyAllWindows()
+# When the app exits, ensure the camera is released
+if st.session_state.camera_on and st.session_state.cap is not None:
+    release_camera()
