@@ -9,21 +9,12 @@ if 'camera_on' not in st.session_state:
     st.session_state.camera_on = False
 
 # Toggle button for camera
-if st.session_state.camera_on:
-    button_label = "Turn Off Camera"
-else:
-    button_label = "Turn On Camera"
-
-# Placeholder for displaying video
-video_placeholder = st.empty()
+button_label = "Turn Off Camera" if st.session_state.camera_on else "Turn On Camera"
 
 # Function to handle camera stream
-def video_streaming():
-    class MaskDetectionTransformer(VideoTransformerBase):
-        def transform(self, frame):
-            return frame.to_ndarray(format="bgr24")
-
-    webrtc_streamer(key="mask_detection", video_transformer_factory=MaskDetectionTransformer)
+class MaskDetectionTransformer(VideoTransformerBase):
+    def transform(self, frame):
+        return frame.to_ndarray(format="bgr24")
 
 # Button to toggle camera
 if st.button(button_label):
@@ -31,6 +22,4 @@ if st.button(button_label):
 
 # Start or stop video stream based on button
 if st.session_state.camera_on:
-    video_streaming()
-else:
-    video_placeholder.empty()
+    webrtc_streamer(key="mask_detection", video_transformer_factory=MaskDetectionTransformer)
