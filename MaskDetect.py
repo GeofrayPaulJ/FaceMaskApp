@@ -4,66 +4,55 @@ import cv2
 from PIL import Image
 import numpy as np
 
-# Load the YOLOv8 model
+# Load YOLO model
 model = ultralytics.YOLO('best_yet.pt')
 
-# Streamlit app title
 st.title("Real-Time Face Mask Detection using YOLOv8")
 
-# Initialize session state variables for the camera and video capture
+# Initialize camera state
 if 'camera_on' not in st.session_state:
     st.session_state.camera_on = False
 
 if 'cap' not in st.session_state:
     st.session_state.cap = None  
 
-# Placeholder for displaying the video
 video_placeholder = st.empty()
 
-# Function to safely release the camera and reset session state
-def release_camera():
-    if st.session_state.cap is not None:
-        st.session_state.cap.release()
-        st.session_state.cap = None
-    st.session_state.camera_on = False
-    cv2.destroyAllWindows()
-
-# Button to turn on the camera
+# Turn on the camera
 if st.button("Turn On Camera") and not st.session_state.camera_on:
+    st.session_state.camera_on = True
     st.session_state.cap = cv2.VideoCapture(0)
-    if st.session_state.cap.isOpened():
-        st.session_state.camera_on = True
-    else:
-        st.error("Error: Could not access the camera. Please check the device.")
-        release_camera()
 
-# Button to turn off the camera
+# Turn off the camera
 if st.button("Turn Off Camera") and st.session_state.camera_on:
-    release_camera()
+    st.session_state.camera_on = False
+    if st.session_state.cap is not None:
+        st.session_state.cap.release() 
+        st.session_state.cap = None
 
-# Stream the video if the camera is on
+# Display the camera feed and run YOLO model
 if st.session_state.camera_on:
     cap = st.session_state.cap
     if cap is not None:
-        # Capture and process frames
         ret, frame = cap.read()
         if not ret:
             st.warning("Could not read from camera. Please check your device.")
-            release_camera()  # Safely release camera if there's an issue
         else:
-            # Run the YOLO model on the frame
+            # Run YOLO model on the frame
             results = model(frame)
 
-            # Annotate the frame with detections
+            # Annotate the frame with detection results
             annotated_frame = results[0].plot()
 
-            # Convert the frame to RGB for display
+            # Convert frame to RGB format for display
             frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame_rgb)
 
-            # Display the frame
+            # Display the frame in Streamlit
             video_placeholder.image(img)
 
-# When the app exits, ensure the camera is released
-if st.session_state.camera_on and st.session_state.cap is not None:
-    release_camera()
+# Release camera and destroy windows (optional for Streamlit, might not be necessary)
+if not st.session_state.camera_on and st.session_state.cap is not None:
+    st.session_state.cap.release()
+    st.session_state.cap = None
+    cv2.destroyAllWindows()
