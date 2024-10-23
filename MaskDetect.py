@@ -4,6 +4,7 @@ import cv2
 from PIL import Image
 import numpy as np
 
+
 model = ultralytics.YOLO('best_yet.pt')
 
 st.title("Real-Time Face Mask Detection using YOLOv8")
@@ -50,13 +51,12 @@ if st.session_state.camera_on:
             img = Image.fromarray(frame_rgb)
 
             
-            video_placeholder.image(img)
+            video_placeholder.image(img, use_column_width=True)
 
-            
+
             if not st.session_state.camera_on:
                 break
 
-        
-        st.session_state.cap.release()
-        st.session_state.cap = None
-        cv2.destroyAllWindows()
+        if st.session_state.cap is not None:
+            st.session_state.cap.release() 
+            st.session_state.cap = None
