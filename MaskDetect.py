@@ -1,50 +1,42 @@
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
-import av
 import cv2
-import numpy as np
 from PIL import Image
+import numpy as np
+from streamlit_webrtc import webrtc_streamer
 import ultralytics
 
 # Load YOLO model
 model = ultralytics.YOLO('best_yet.pt')
 
-# App Title
-st.title("Real-Time and Video-based Face Mask Detection using YOLOv8")
+st.title("Real-Time Face Mask Detection using YOLOv8")
 
-# Initialize session state to manage camera status
-if 'camera_on' not in st.session_state:
-    st.session_state.camera_on = False
+# Define session state for camera control
+if 'streaming' not in st.session_state:
+    st.session_state.streaming = False
 
-# Placeholder for live video stream
-video_placeholder = st.empty()
+# WebRTC streamer callback
+def video_frame_callback(frame):
+    img = frame.to_ndarray(format="bgr24")  # Convert the frame to ndarray
 
-# Class for Real-Time Processing via Webcam
-class VideoProcessor(VideoProcessorBase):
-    def recv(self, frame):
-        img = frame.to_ndarray(format="bgr24")
+    # Perform face mask detection using YOLO model
+    results = model(img)
+    
+    # Annotate the frame with detection results
+    annotated_frame = results[0].plot()
 
-        # Run YOLO model on the frame
-        results = model(img)
+    # Convert the annotated frame to RGB for Streamlit display
+    img_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+    img_pil = Image.fromarray(img_rgb)
 
-        # Annotate the frame with detection results
-        annotated_frame = results[0].plot()
+    return img_pil
 
-        # Return the annotated frame as a video stream
-        return av.VideoFrame.from_ndarray(annotated_frame, format="bgr24")
+# Button to start/stop streaming
+if st.button("Start Camera") and not st.session_state.streaming:
+    st.session_state.streaming = True
 
-# Camera Toggle Button
-if st.session_state.camera_on:
-    button_label = "Turn Off Camera"
-else:
-    button_label = "Turn On Camera"
+if st.button("Stop Camera") and st.session_state.streaming:
+    st.session_state.streaming = False
 
-if st.button(button_label):
-    st.session_state.camera_on = not st.session_state.camera_on
-
-# Start or Stop the webcam stream
-if st.session_state.camera_on:
-    st.subheader("Live Video Stream (Webcam)")
-    webrtc_streamer(key="real-time-detection", video_processor_factory=VideoProcessor)
-else:
-    st.warning("Camera is turned off.")
+# If streaming, show the video stream
+if st.session_state.streaming:
+    webrtc_streamer(key="face-mask-detection", video_frame_callback=video_frame_callback)
