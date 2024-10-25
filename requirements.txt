@@ -4,4 +4,4 @@ numpy
 supervision
 Pillow
 torch
-opencv-python
+opencv-python==4.10.0 
