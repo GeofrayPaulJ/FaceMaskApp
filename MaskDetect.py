@@ -1,31 +1,39 @@
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, VideoTransformerBase
+import cv2
 import numpy as np
 
 # Streamlit app title
 st.title("Real-Time Face Mask Detection using YOLOv8")
 
-# Toggle button for camera
-if "camera_on" not in st.session_state:
+# Session state to track camera status
+if 'camera_on' not in st.session_state:
     st.session_state.camera_on = False
 
+# Toggle button for camera
 button_label = "Turn Off Camera" if st.session_state.camera_on else "Turn On Camera"
 
 # Button to toggle camera
 if st.button(button_label):
     st.session_state.camera_on = not st.session_state.camera_on
 
-# Video transformer class for mask detection
-class MaskDetectionTransformer(VideoTransformerBase):
-    def transform(self, frame):
-        # Add mask detection processing here (using YOLOv8 or similar model)
-        img = frame.to_ndarray(format="bgr24")
+# Function to display video frames using OpenCV VideoCapture
+def display_video():
+    cap = cv2.VideoCapture(0)  # Initialize the camera
+    while st.session_state.camera_on:
+        ret, frame = cap.read()
+        if not ret:
+            st.write("Failed to capture frame")
+            break
 
-        # Return unprocessed frame (as an example, for actual detection, add YOLOv8 inference here)
-        return img
+        # Optional: process the frame with YOLOv8 for mask detection
+        # For now, convert frame to RGB to display in Streamlit
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        st.image(frame_rgb, channels="RGB")
 
-# Start or stop video stream based on the button
+    cap.release()  # Release the camera when stopped
+
+# Start or stop video display
 if st.session_state.camera_on:
-    webrtc_streamer(key="mask_detection", video_transformer_factory=MaskDetectionTransformer)
+    display_video()
 else:
     st.write("Camera is off")
