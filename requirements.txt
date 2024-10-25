@@ -4,5 +4,4 @@ numpy
 supervision
 Pillow
 torch
-opencv-python-headless
-streamlit-webrtc
+py-opencv
