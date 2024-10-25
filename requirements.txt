@@ -4,4 +4,4 @@ numpy
 supervision
 Pillow
 torch
-py-opencv
+opencv-python
